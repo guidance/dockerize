@@ -1,0 +1,13 @@
+#Commented lineitems to be reviewed
+
+app/etc/env.php
+LICENSE.txt
+LICENSE_AFL.txt
+LICENSE_EE.txt
+RELEASE_NOTES.txt
+README_EE.md
+CHANGELOG.md
+Dockerfile
+devops
+dev/tests
+releases
