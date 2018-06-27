@@ -45,7 +45,6 @@ function installandupgrade {
             envconfig > $LOCAL_ENV_PATH
             deployruntimeconfig > $LOCAL_CONFIG_PATH
             backupdb
-            configelastic
             upgrade
             cleancache
         else

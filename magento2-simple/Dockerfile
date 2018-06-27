@@ -1,8 +1,15 @@
 FROM webdevops/php-apache:ubuntu-16.04
 
-RUN apt-get update && apt-get install -y debconf-doc libsasl2-modules nano netcat
+RUN apt-get update && apt-get install -y debconf-doc libsasl2-modules nano netcat python-software-properties software-properties-common
+
+RUN add-apt-repository -y ppa:ondrej/php
+
+RUN apt-get update -y
 
 RUN	DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-client postfix php-xdebug 
+
+RUN apt install -y php7.1 libapache2-mod-php7.1 php7.1-common php7.1-mbstring php7.1-xmlrpc php7.1-soap php7.1-gd \
+	php7.1-xml php7.1-intl php7.1-mysql php7.1-cli php7.1-mcrypt php7.1-zip php7.1-curl php7.1-bcmath
 
 RUN rm -rf /var/lib/apt/lists/*
 
