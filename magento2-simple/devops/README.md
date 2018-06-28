@@ -25,7 +25,7 @@ Local Development Environment Powered by Docker and Docker Compose
 3. Clone the project M2 repo into the `project/magento` folder
 4. Copy the `docker-compose.sample.yml` from `project/magento/devops` to the `project` project folder. 
 5. Rename `docker-compose.sample.yml` to `docker-compose.yml`
-6. Update any Environment Variables in `docker-compose.yml` to reflect the environment you want to build.  For example, you might want use a custom domain name for your site.  Update `CONFIG__DEFAULT__WEB__UNSECURE__BASE_URL=http://projectgaming.guidance.local/` to `CONFIG__DEFAULT__WEB__UNSECURE__BASE_URL=http://projectgaming.mydomain.local/`
+6. Update any Environment Variables in `docker-compose.yml` to reflect the environment you want to build.  For example, you might want use a custom domain name for your site.  Update `CONFIG__DEFAULT__WEB__UNSECURE__BASE_URL=http://project.guidance.local/` to `CONFIG__DEFAULT__WEB__UNSECURE__BASE_URL=http://project.mydomain.local/`
 7. Setup/Start Portainer Docker Web GUI (Optional: See bottom of this README). 
 
 ### Start Development Stack
@@ -41,7 +41,7 @@ _This will attach the terminal to the containers and output useful information f
 # localhost is used to configure the loopback interface
 # when the system is booting.  Do not change this entry.
 ##
-127.0.0.1   localhost projectgaming.guidance.local
+127.0.0.1   localhost project.guidance.local project-admin.guidance.local
 255.255.255.255 broadcasthost
 ::1             localhost
 ```
@@ -50,6 +50,18 @@ _This will attach the terminal to the containers and output useful information f
 This system creates a one time run processor that sets up Magento Configs, and installs Magento if not already installed, and sets all the proper permissions. See `magento/devops/magento-config.sh` for commands and sequence of events.
 > This script gets copied as a system executable that is run by supervisor once when the container starts, and can be run if you want to reset things by hand. 
 From a bash prompt in the web service container: execute `magento-config.sh /app configure`
+
+#### Roles and Modes
+
+> Role Concept: You can run this stack in different ways: As a web nodes, or a process node. For scalable stacks, the static content is shared between the nodes. So, the process node runs the static deploy and the web nodes wait for the static versions to line up, prior to them becoming live. We use `MAGE_CONTAINER_ROLE=[web/process]` this variable defaults to process.
+
+> Mode Concept: You can run this stack in different ways: In developer mode, and in production mode. 
+
+The standard `MAGE_MODE=[developer/production]` environment variable applies to the Magento functionality. The Magento Configuration script also pivots for a couple things when the site is in Production Mode. 
+
+- The Static Content Deploy will run on the process node, if the site is in production mode
+- The entire configuration script is dependent on the version file, and shares the static content version and the code version between the different nodes. See the `pub/static/process` folder once you have a full build.
+
 
 ### Debugging using Xdebug
 

@@ -23,7 +23,7 @@ function configure {
     checkrequiredresources
     setinstallstatus
     setinstallpermissions
-    su application -c "magento-config.sh $APP_DIR installandupgrade"
+    su www-data -c "magento-config.sh $APP_DIR installandupgrade"
     setruntimepermissions
     cronrunner
     enabledebug
@@ -286,9 +286,8 @@ function backupdb {
 function adjustwebserver {
     if [ -n "${POSTFIX_FROM_ADDRESS}" ]
         then
-        echo "php_admin_value[sendmail_path] = /usr/sbin/sendmail -t -i -f ${POSTFIX_FROM_ADDRESS}" >> /etc/php/7.0/fpm/pool.d/application.conf
+        echo "php_admin_value[sendmail_path] = /usr/sbin/sendmail -t -i -f ${POSTFIX_FROM_ADDRESS}" >> /etc/php/7.1/fpm/pool.d/www.conf
     fi
-    echo "variables_order=EGPCS" >> /opt/docker/etc/php/php.ini
     service php-fpm restart
 }
 
@@ -322,7 +321,7 @@ function setinstallpermissions {
         echo " - - Setting Install Permissions"
         chmod -R a+wX app/etc
         chmod -R a+wX var/log
-        chown -R application:application var/log
+        chown -R www-data:www-data var/log
         chmod a+wX var
         chmod a+wX pub/media
         chmod a+wX pub/static
@@ -342,9 +341,9 @@ function setruntimepermissions {
         chmod o-w pub/media
         chmod o-w pub/static
         echo " - - Setting Post-static-deploy Permissions"
-        chown -R application:application pub/static
-        chown -R application:application var/log
-        chown application:application pub/media
+        chown -R www-data:www-data pub/static
+        chown -R www-data:www-data var/log
+        chown www-data:www-data pub/media
     fi
 
     set +x

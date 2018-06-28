@@ -9,7 +9,13 @@ RUN apt-get update -y
 RUN	DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-client postfix php-xdebug 
 
 RUN apt install -y php7.1 libapache2-mod-php7.1 php7.1-common php7.1-mbstring php7.1-xmlrpc php7.1-soap php7.1-gd \
-	php7.1-xml php7.1-intl php7.1-mysql php7.1-cli php7.1-mcrypt php7.1-zip php7.1-curl php7.1-bcmath
+	php7.1-xml php7.1-intl php7.1-mysql php7.1-cli php7.1-mcrypt php7.1-zip php7.1-curl php7.1-bcmath php7.1-fpm
+
+RUN mkdir -p /run/php && rm /usr/local/bin/php-fpm && ln -nfs /usr/sbin/php-fpm7.1 /usr/local/bin/php-fpm
+
+RUN rm -f -- /opt/docker/etc/httpd/conf.d/10-php.conf && \
+	echo "variables_order=EGPCS" >> /etc/php/7.1/apache2/conf.d/99-docker.ini && \
+	echo "variables_order=EGPCS" >> /etc/php/7.1/cli/conf.d/99-docker.ini
 
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -29,7 +35,7 @@ COPY devops/postfix/main.cf /etc/postfix/main.cf
 ENV MAGENTO_SESSION_SAVE=db
 
 # Setup PHP-FPM
-RUN echo "pm.max_children = 300" >> /etc/php/7.0/fpm/pool.d/application.conf
+RUN echo "pm.max_children = 300" >> /etc/php/7.1/fpm/pool.d/www.conf
 
 RUN echo "alias m2config=\"magento-config.sh /app configure\"" >> /root/.bashrc && \
 	echo "alias m2fc=\"su - application -c 'cd /app && php bin/magento cache:flush'\"" >> /root/.bashrc && \
@@ -41,6 +47,8 @@ ADD . /app
 
 WORKDIR /app
 
-RUN mkdir -p /app/var/log
+RUN mkdir -p /app/var/log 
 
-RUN chown -R application:application /app
+RUN mkdir -p /home/www-data && chown www-data:www-data /home/www-data && usermod -s /bin/bash -d /home/www-data www-data
+
+RUN chown -R www-data:www-data /app
