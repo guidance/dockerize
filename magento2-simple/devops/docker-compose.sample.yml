@@ -23,7 +23,7 @@ services:
             - WEB_DOCUMENT_ROOT=/app/pub
             - MAGENTO_BASE_URL=http://project.guidance.local
             - MAGENTO_SECURE_URL=http://project.guidance.local
-            - MAGENTO_BACKEND_PATH=madmin
+            - MAGENTO_BACKEND_PATH=projectadmin
             - MAGENTO_ADMIN_USER=admin
             - MAGENTO_ADMIN_PASSWORD=admin123
             - MAGENTO_ADMIN_FIRSTNAME=Admin

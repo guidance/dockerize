@@ -28,6 +28,13 @@ Local Development Environment Powered by Docker and Docker Compose
 6. Update any Environment Variables in `docker-compose.yml` to reflect the environment you want to build.  For example, you might want use a custom domain name for your site.  Update `CONFIG__DEFAULT__WEB__UNSECURE__BASE_URL=http://project.guidance.local/` to `CONFIG__DEFAULT__WEB__UNSECURE__BASE_URL=http://project.mydomain.local/`
 7. Setup/Start Portainer Docker Web GUI (Optional: See bottom of this README). 
 
+
+> **Note about Setup Speed**
+There are some shared volumes listed in the magento-web section of the docker-compose.yml file. If this is the first setup, it's much faster if you 
+comment those out. You can copy those files to your local after you get
+everything running, then you can uncomment those volumes, and share back your 
+local copy.
+
 ### Start Development Stack
 > This stack provides a basic environment for M2 Development using the same Docker Images that will be built and deployed to the dev/stage/production environments.
 1. Perform Intial Setup (above)
@@ -53,11 +60,11 @@ From a bash prompt in the web service container: execute `magento-config.sh /app
 
 #### Roles and Modes
 
-> Role Concept: You can run this stack in different ways: As a web nodes, or a process node. For scalable stacks, the static content is shared between the nodes. So, the process node runs the static deploy and the web nodes wait for the static versions to line up, prior to them becoming live. We use `MAGE_CONTAINER_ROLE=[web/process]` this variable defaults to process.
+> Role Concept: You can run this stack in different ways: As a web nodes, or a process node. For scalable stacks, the static content is shared between the nodes. So, the process node runs the static deploy and the web nodes wait for the static versions to line up, prior to them becoming live. We use `MAGE_CONTAINER_ROLE=[web|process]` this variable defaults to process.
 
 > Mode Concept: You can run this stack in different ways: In developer mode, and in production mode. 
 
-The standard `MAGE_MODE=[developer/production]` environment variable applies to the Magento functionality. The Magento Configuration script also pivots for a couple things when the site is in Production Mode. 
+The standard `MAGE_MODE=[developer|production]` environment variable applies to the Magento functionality. The Magento Configuration script also pivots for a couple things when the site is in Production Mode. 
 
 - The Static Content Deploy will run on the process node, if the site is in production mode
 - The entire configuration script is dependent on the version file, and shares the static content version and the code version between the different nodes. See the `pub/static/process` folder once you have a full build.
@@ -110,7 +117,8 @@ For the best Performance with M2, we need to share limited folders. By default w
 
 The following environment variables are used by the config script to setup the postfix configuration files.
 
-Use the MailHog for Local Development, and the SES for QA/Stage/Production
+Use the MailHog for Local Development, and the AWS SES for QA/Stage/Production
+If you use AWS SES, then the from address needs to be verified as a sending address in the SES console. 
 
     # Used to config the use of MailHog
     - POSTFIX_RELAYURL=email
@@ -147,18 +155,19 @@ Docker Compose
 * `docker ps` - _Lists out the running containers `-a` lists stopped containers too_
 * `docker logs [container id/name]` - _Outputs logs from the container `-l` attaches to the container and follows the logs in the terminal_
 * `docker exec -it [container id/name] bash`  - _Attaches to the container and starts a bash prompt_ _(kinda like ssh into the container)_
-* `docker build [file location]` -  _Builds an image from the file location, looks for a `Dockerfile`_
+* `docker build [file location]` -  _Builds an image from the file location, looks for a `Dockerfile` in that folder_
+* `docker cp [container id/name]:/app/vendor ./magento/` - _Copies the vendor folder from the container to your local_ 
 
 ### Services in Docker Compose
 
 > The Docker Compose Sample File outlines the services that are being, or can be, used from your local environment.
 
-`web:` The Magento Web and Application Server.  It Contains the following process and applications:
-* nginx (ver 1.10)
-* PHP-FPM (ver 7.0)
+`magento-web:` The Magento Web and Application Server.  It Contains the following process and applications, all run by supervisord:
+* Apache (ver 2.4)
+* PHP-FPM (ver 7.1)
 * Postfix
 
-`magento-db:` The Database Server. Uses the latest Percona version
+`magento-db:` The Database Server. Uses the latest Percona version 5.7
 
 `magento-es:` Elasticsearch server. It's used as default magento search engine end documents storage database. Uses the latest Elasticsearch 2.* version.
 
