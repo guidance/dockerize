@@ -76,7 +76,7 @@ RUN chown -R apache:apache /app
 WORKDIR /app
 
 COPY devops/ssh/akeneo-ee /home/apache/.ssh/id_rsa
-RUN chmod 600 /home/apache/.ssh/id_rsa
+RUN chmod 600 /home/apache/.ssh/id_rsa && chown -R apache:apache /home/apache
 COPY devops/ssh/akeneo-ee /root/.ssh/id_rsa
 RUN chmod 600 /root/.ssh/id_rsa
 

@@ -125,7 +125,17 @@ function enabledebug {
 function composerinstall {
     mkdir -p ~/.composer/
     authjson > ~/.composer/auth.json
-    composer install --optimize-autoloader --prefer-dist
+
+    ## Add the SSH Fingerprint to the SSH Known hosts, so that the composer command doesn't crap out.
+    ssh-keyscan -p 443 -t rsa,dsa distribution.akeneo.com >> ~/.ssh/known_hosts 
+
+    if [ -n "${PIM_FRESH_INSTALL}" ] 
+    then
+        composer install --optimize-autoloader --prefer-dist -vvv
+    else
+        composer install --optimize-autoloader --prefer-dist
+    fi
+    
 }
 
 function setinstallpermissions {
