@@ -92,6 +92,89 @@ function magento2-simple {
 
 }
 
+function akeneo2-simple {
+
+  ls -al $GUIDOCKER_DEFAULT_PROJECTS_DIR
+
+  echo " - - - "
+  echo "Enter the project that we are dockerizing:"
+  read PROJECTKEY
+
+  PROJECT_DIR="$GUIDOCKER_DEFAULT_PROJECTS_DIR/$PROJECTKEY"
+  ls -al $PROJECT_DIR
+
+  echo " - - - "
+  echo "Enter the Akeneo 2 repo directory that we are dockerizing:"
+  read APP_FOLDER
+
+  APP_DIR="$PROJECT_DIR/$APP_FOLDER"
+
+  echo $APP_DIR
+
+  if [ -e "$APP_DIR/app/config/pim_parameters.yml" ]
+    then
+      echo "Found Akeneo Install."
+
+      echo " - - - "
+
+      echo " Do you want to Dockerize your Akeneo 2 Install? (Y/n)"
+      read DOCKERIZE_CONFIRM
+
+      if [ -n "$DOCKERIZE_CONFIRM" ] && [ "$DOCKERIZE_CONFIRM" == "Y" ]
+        then
+          clear
+          echo "One moment while we initialize the project folders... "
+          sleep 1
+          mkdir -p $PROJECT_DIR/akeneo-db/data
+          mkdir -p $PROJECT_DIR/akeneo-es/data
+
+          echo "We are moving the devops directory to your Akeneo Project..."
+          sleep 1
+          cp -R akeneo2-simple/devops $APP_DIR/
+          
+          echo "We are moving the Dockerfile and ignore file..."
+          sleep 1
+          cp akeneo2-simple/Dockerfile $APP_DIR/
+          cp akeneo2-simple/.dockerignore $APP_DIR/
+
+
+          if [ -e "$PROJECT_DIR/docker-compose.yml" ]
+            then 
+              echo "Looks like you already have a docker-compose file for this project..."
+              sleep 1
+              echo "We will copy a dockerize sample for your purusal"
+              sleep 1
+              cp akeneo2-simple/devops/docker-compose.sample.yml $PROJECT_DIR/
+            else
+              echo "We are moving the docker-compose file Project dir: $PROJECT_DIR"
+              sleep 1
+              cp akeneo2-simple/devops/docker-compose.sample.yml $PROJECT_DIR/docker-compose.yml
+          fi
+
+          echo " - - - "
+
+          echo "If all went then you should now be able to go to your project directory, do a little setup and then run: docker-compose up"
+          echo "Please read the Readme at devops/readme.md in the Akeneo project"
+
+          echo " - - - "
+
+        else
+          clear
+          echo "Maybe next time then... good bye!"
+
+      fi
+
+    else
+      clear
+      echo "! ! ! -- -- - - -"
+      echo "Looks like there is no Akeneo Project here."
+      echo "Please check the files and make sure that you have your Akeneo project in $PROJECT_DIR"
+
+  fi 
+
+}
+
+
 function init {
   echo "Initialize Project Structure"
 }

@@ -1,0 +1,4 @@
+.git
+Dockerfile
+var/logs
+var/cache

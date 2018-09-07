@@ -1,0 +1,53 @@
+version: '2'
+services:
+
+    pim-db:
+        image: percona:5.7
+        volumes:
+            - ./pim-db/data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=longpassbird
+            - MYSQL_DATABASE=akeneo
+            - MYSQL_USER=akeneo-dbuser
+            - MYSQL_PASSWORD=D34jkfdasrw
+        ports:
+            - 3306:3306
+
+    pim:
+        build: ./akeneo
+        # volumes:
+        #     - ./akeneo:/app
+        ports: 
+            - 80:80
+        links:
+            - pim-db
+            - pim-es
+            - email
+        environment:
+            - WEB_DOCUMENT_ROOT=/app/web
+            - MYSQL_DB_HOST=pim-db
+            - MYSQL_DB_USER=akeneo-dbuser
+            - MYSQL_DB_PASSWORD=D34jkfdasrw
+            - MYSQL_DB_NAME=akeneo
+            - PIM_ELASTICSEARCH_HOST=pim-es
+            - PIM_ELASTICSEARCH_PORT=9200
+            - POSTFIX_RELAYURL=email
+            - POSTFIX_RELAYPORT=1025
+            - GITHUB_TOKEN=87be*****1c3a9.  ## You will need a Github Token if you need to do a full composer install
+            - PIM_SECRET=8rRdF3iog1JVlVMB56y45237c13c75df
+            # - PIM_FRESH_INSTALL=1  ## Un-comment for new installs or if you want to nuke your DB and start over
+
+    pim-es:
+        image: docker.elastic.co/elasticsearch/elasticsearch:5.6.9
+        ports:
+            - 9200:9200
+        volumes:
+          - ./pim-es/data:/usr/share/elasticsearch/data
+        environment:
+            ELASTICSEARCH_PORT: 9200
+            discovery.type: 'single-node'
+
+    email:
+        image: mailhog/mailhog
+        ports:
+            - "8025:8025"
