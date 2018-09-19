@@ -33,6 +33,7 @@ services:
             - PIM_ELASTICSEARCH_PORT=9200
             - POSTFIX_RELAYURL=email
             - POSTFIX_RELAYPORT=1025
+            - COMPOSER_PROCESS_TIMEOUT=6000
             - GITHUB_TOKEN=87be*****1c3a9.  ## You will need a Github Token if you need to do a full composer install
             - PIM_SECRET=8rRdF3iog1JVlVMB56y45237c13c75df
             # - PIM_FRESH_INSTALL=1  ## Un-comment for new installs or if you want to nuke your DB and start over
@@ -45,6 +46,7 @@ services:
           - ./pim-es/data:/usr/share/elasticsearch/data
         environment:
             ELASTICSEARCH_PORT: 9200
+            ES_JAVA_OPTS: '-Xms512m -Xmx512m'
             discovery.type: 'single-node'
 
     email:
