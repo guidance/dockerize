@@ -1,5 +1,6 @@
 #Commented lineitems to be reviewed
 
+.git/
 app/etc/env.php
 LICENSE.txt
 LICENSE_AFL.txt
