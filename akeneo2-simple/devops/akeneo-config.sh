@@ -17,6 +17,7 @@ function configure {
     su apache -c "akeneo-config.sh $APP_DIR installandupgrade"
 
     cronrunner
+    setupdaemon
 
     echo "Config Ended"
 }
@@ -69,6 +70,12 @@ function checkrequiredresources {
 
 }
 
+function resetindexes {
+    php bin/console akeneo:elasticsearch:reset-indexes --env=prod
+    php bin/console pim:product:index --all --env=prod
+    php bin/console pim:product-model:index --all --env=prod
+}
+
 function cronrunner {
     if [ -n "${CRON_RUNNER}" ] && [ -e devops/akeneo.cron ]
         then
@@ -76,6 +83,16 @@ function cronrunner {
         cp devops/akeneo.cron /etc/cron.d/akeneo
     else
         cronoff
+    fi
+}
+
+function setupdaemon {
+    if [ -e devops/akeneo-daemon.conf ]
+        then
+        echo "Setting as Akeneo Daemon"
+        cp devops/akeneo-daemon.conf /opt/docker/etc/supervisor.d/akeneo-daemon.conf
+        supervisorctl reread
+        supervisorctl update
     fi
 }
 
@@ -261,3 +278,4 @@ function configuremonitoring {
 
 
 $2
+
