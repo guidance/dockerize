@@ -66,6 +66,72 @@ function magento2-simple {
 
 }
 
+function magento1-simple {
+
+  ls -al $GUIDOCKER_DEFAULT_PROJECTS_DIR
+
+  echo " - - - "
+  echo "Enter the project that we are grabbing configs from:"
+  read PROJECTKEY
+
+  PROJECT_DIR="$GUIDOCKER_DEFAULT_PROJECTS_DIR/$PROJECTKEY"
+  ls -al $PROJECT_DIR
+
+  echo " - - - "
+  echo "Enter the Magento 1 repo directory that we are grabbing configs from:"
+  read MAGENTO_FOLDER
+
+  MAGENTO_DIR="$PROJECT_DIR/$MAGENTO_FOLDER"
+
+  echo $MAGENTO_DIR
+  #ls -al $MAGENTO_DIR
+
+  if [ -e "$MAGENTO_DIR/app/etc/config.xml" ]
+    then
+      echo "Found Magento Install."
+
+      echo " - - - "
+
+      echo " Do you want to update dockerize from your Magento 1 Install? (Y/n)"
+      read DOCKERIZE_CONFIRM
+
+      if [ -n "$DOCKERIZE_CONFIRM" ] && [ "$DOCKERIZE_CONFIRM" == "Y" ]
+        then
+          clear
+
+          mkdir -p magento1-simple/devops
+          
+          echo "We are moving the devops directory from your Magento Project..."
+          sleep 1
+          cp -R $MAGENTO_DIR/devops/* magento1-simple/devops/ 
+          
+          echo "We are moving the Dockerfile and ignore file..."
+          sleep 1
+          cp $MAGENTO_DIR/Dockerfile magento1-simple/Dockerfile 
+          cp $MAGENTO_DIR/.dockerignore magento1-simple/.dockerignore
+
+          echo " - - - "
+
+          echo "If all went well, you can know adjust the files and then commit any valuable generic changes to the dockerize project"
+
+          echo " - - - "
+
+        else
+          clear
+          echo "Maybe next time then... good bye!"
+
+      fi
+
+    else
+      clear
+      echo "! ! ! -- -- - - -"
+      echo "Looks like there is no Magento Project here."
+      echo "Please check the files and make sure that you have your magento project in $PROJECT_DIR"
+
+  fi 
+
+}
+
 function akeneo2-simple {
 
   ls -al $GUIDOCKER_DEFAULT_PROJECTS_DIR

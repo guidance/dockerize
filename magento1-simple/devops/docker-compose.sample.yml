@@ -1,0 +1,45 @@
+db:
+    image: percona
+    volumes:
+        - ./db/data:/var/lib/mysql
+    environment:
+        - MYSQL_ROOT_PASSWORD=longpassbird
+        - MYSQL_DATABASE=magento
+        - MYSQL_USER=magento-dbuser
+        - MYSQL_PASSWORD=D34jkfdasrw
+    ports:
+        - 3306:3306
+web:
+    build: ./magento
+    ports: 
+        - 80:80
+    volumes:
+        - ./magento:/var/www
+    links:
+        - db
+        - redis-cache
+        - redis-fpc
+        - redis-session
+    environment:
+        - DB_CONNECTION=mysql
+        - DB_PORT=3306
+        - DB_HOST=db
+        - DB_DATABASE=magento
+        - DB_USERNAME=magento-dbuser
+        - DB_PASSWORD=D34jkfdasrw
+        - WEB_DOCUMENT_ROOT=/var/www
+        - MAGENTO_REDIS_CACHE_ENDPOINT=redis-cache
+        - MAGENTO_REDIS_PAGE_CACHE_ENDPOINT=redis-fpc
+        - MAGENTO_REDIS_SESSION_ENDPOINT=redis-session        
+redis-cache:
+    image: redis
+    ports: 
+        - 6379
+redis-fpc:
+    image: redis
+    ports: 
+        - 6379
+redis-session:
+    image: redis
+    ports: 
+        - 6379

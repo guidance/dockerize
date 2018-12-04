@@ -1,0 +1,2 @@
+# Execute Magento cron engine every 5 minutes
+*/5 * * * *     application  php /var/www/cron.php
