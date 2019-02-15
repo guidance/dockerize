@@ -15,6 +15,7 @@ services:
         build: ./magento
         volumes:
             - "./magento/app:/app/app"
+            - "./build-cache:/app/build-cache"
             - "./magento/pub/media:/app/pub/media"
             - "./magento/pub/static:/app/pub/static"
             # - "./magento/var:/app/var"
@@ -32,7 +33,9 @@ services:
             - MAGENTO_CRYPT_KEY=2csdjy734ksude96sdfsdfsdfef55af
             - MAGE_MODE=production
             - MAGE_CONTAINER_ROLE=process
+            #- MAGE_CONTAINER_ROLE=web
             - CRON_RUNNER=true
+            # - CRON_RUNNER=false
             - MAGENTO_REPO_PUBLIC=293a************************553c
             - MAGENTO_REPO_PRIVATE=9be5************************2acc
             ####Database Parameters
@@ -67,8 +70,16 @@ services:
             # - POSTFIX_SES_USER=AKIA**********KXUTQ
             # - POSTFIX_SES_PASS=AhUU******************dAMzYSIUq
             # - POSTFIX_FROM_ADDRESS=no-reply@notifications.domain.com
+            ###Debug###
             # - XDEBUG_CONFIG=remote_host=10.0.0.41 remote_enable=1
+            ###Force Maintenance###
             # - MAGE_FORCE_MAINTENANCE=true
+            ###Build Cache###
+            # - BUILD_CACHE_BUCKET=build-cache-bucket
+            # - BUILD_CACHE_PATH=path/to/build-cache
+            # - AWS_ACCESS_KEY_ID=AKIA************3FDA
+            # - AWS_SECRET_ACCESS_KEY=bbw9******************S6gbU
+            # - AWS_DEFAULT_REGION=us-west-2      
         ports:
             - 80:80
         links:
@@ -78,6 +89,72 @@ services:
             - magento-redis-session
             - magento-es
             - email
+    # magento-process:
+    #     build: ./magento
+    #     volumes:
+    #         - "./magento/app:/app/app"
+    #         - "./build-cache:/app/build-cache"
+    #         - "./magento/pub/media:/app/pub/media"
+    #         - "./magento/pub/static:/app/pub/static"
+    #         # - "./magento/var:/app/var"
+    #     environment:
+    #         ###Magento/Web Parameters###          
+    #         - WEB_DOCUMENT_ROOT=/app/pub
+    #         - MAGENTO_BASE_URL=http://project.guidance.local
+    #         - MAGENTO_SECURE_URL=http://project.guidance.local
+    #         - MAGENTO_BACKEND_PATH=projectadmin
+    #         - MAGENTO_ADMIN_USER=admin
+    #         - MAGENTO_ADMIN_PASSWORD=admin123
+    #         - MAGENTO_ADMIN_FIRSTNAME=Admin
+    #         - MAGENTO_ADMIN_LASTNAME=User
+    #         - MAGENTO_ADMIN_EMAIL=admin@guidance.local
+    #         - MAGENTO_CRYPT_KEY=2csdjy734ksude96sdfsdfsdfef55af
+    #         - MAGE_MODE=production
+    #         - MAGE_CONTAINER_ROLE=process
+    #         - CRON_RUNNER=true
+    #         - MAGENTO_REPO_PUBLIC=293a************************553c
+    #         - MAGENTO_REPO_PRIVATE=9be5************************2acc
+    #         ####Database Parameters
+    #         - MAGENTO_DB_HOST=magento-db
+    #         - MAGENTO_DB_USER=magento-dbuser
+    #         - MAGENTO_DB_PASSWORD=D3sdfsdf2342w
+    #         - MAGENTO_DB_NAME=magento
+    #         ###Redis Parameters####
+    #         - REDIS_MAGENTO_CACHE_HOST=magento-redis-cache
+    #         - REDIS_MAGENTO_CACHE_PORT=6379
+    #         - REDIS_MAGENTO_FPC_HOST=magento-redis-fpc
+    #         - REDIS_MAGENTO_FPC_PORT=6379
+    #         - REDIS_MAGENTO_SESSIONS_HOST=magento-redis-session
+    #         - REDIS_MAGENTO_SESSIONS_PORT=6379
+    #         ###System Configs####
+    #         - CONFIG__DEFAULT__WEB__UNSECURE__BASE_URL=http://project.guidance.local/
+    #         - CONFIG__DEFAULT__WEB__SECURE__BASE_URL=http://project.guidance.local/
+    #         - CONFIG__STORES__ADMIN__WEB__UNSECURE__BASE_URL=http://project-admin.guidance.local/
+    #         - CONFIG__STORES__ADMIN__WEB__SECURE__BASE_URL=http://project-admin.guidance.local/
+    #         - CONFIG__DEFAULT__ADMIN__URL__CUSTOM=http://project-admin.guidance.local/
+    #         - CONFIG__DEFAULT__ADMIN__URL__CUSTOM_PATH=projectadmin
+    #         - CONFIG__DEFAULT__ADMIN__URL__USE_CUSTOM=1
+    #         - CONFIG__DEFAULT__ADMIN__URL__USE_CUSTOM_PATH=1
+    #         ###Elasticsearch Parameters###
+    #         - CONFIG__DEFAULT__CATALOG__SEARCH__ELASTICSEARCH_SERVER_HOSTNAME=magento-es
+    #         - CONFIG__DEFAULT__CATALOG__SEARCH__ELASTICSEARCH_SERVER_PORT=9200
+    #         ###Debug###
+    #         # - XDEBUG_CONFIG=remote_host=10.0.0.41 remote_enable=1
+    #         ###Force Maintenance###
+    #         # - MAGE_FORCE_MAINTENANCE=true
+    #         ###Build Cache###
+    #         # - BUILD_CACHE_BUCKET=build-cache-bucket
+    #         # - BUILD_CACHE_PATH=path/to/build-cache
+    #         # - AWS_ACCESS_KEY_ID=AKIA************3FDA
+    #         # - AWS_SECRET_ACCESS_KEY=bbw9******************S6gbU
+    #         # - AWS_DEFAULT_REGION=us-west-2
+    #     links:
+    #         - magento-db
+    #         - magento-redis-cache
+    #         - magento-redis-fpc
+    #         - magento-redis-session
+    #         - magento-es
+    #         - email
     magento-es:
         image: elasticsearch:2
         ports:

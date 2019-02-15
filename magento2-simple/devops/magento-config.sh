@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 APP_DIR=$1
 
 cd $APP_DIR
@@ -34,7 +33,7 @@ function configure {
 }
 
 function installandupgrade {
-    echo " - - Running Command: magento-config.sh /app installandupgrade"
+    echo " - - Running Command: magento-config.sh /app installandupgrade as web user"
 
     mainton
     composerinstall
@@ -53,7 +52,13 @@ function installandupgrade {
     fi
 
     version
+    uploadbuildcache
     maintoff
+}
+
+function archivebuildcache {
+    tar -czf build-cache-vendor.tar.gz vendor composer.json composer.lock
+    mv build-cache-vendor.tar.gz build-cache/
 }
 
 function checkrequiredresources {
@@ -186,6 +191,8 @@ function checkrequiredresources {
         while [ $STATIC_CONTENT_VERIFIED -eq 0 ] && [ $STATIC_DEPLOY_TRIES -lt 300 ]
         do
             STATIC_DEPLOY_TRIES=$((STATIC_DEPLOY_TRIES+1))
+
+            downloadbuildcache
 
             # Read version files from the static directory
             STATIC_DEPLOY_VERSION=$(cat pub/static/deployed_version.txt)
@@ -371,6 +378,24 @@ function upgrade {
     fi
 }
 
+function uploadbuildcache {
+    CODE_WEB_VERSION=$(cat version)
+    if [ -n "${BUILD_CACHE_BUCKET}" ] && [ "${MAGE_PROCESS_RUNNER}" -eq 1 ]
+        then
+        tar -czf "build-cache-$CODE_WEB_VERSION.tar.gz" pub/static
+        aws s3 cp "build-cache-$CODE_WEB_VERSION.tar.gz" "s3://${BUILD_CACHE_BUCKET}/${BUILD_CACHE_PATH}/"
+    fi
+}
+
+function downloadbuildcache {
+    CODE_WEB_VERSION=$(cat version)
+    if [ -n "${BUILD_CACHE_BUCKET}" ]
+        then
+        aws s3 cp "s3://${BUILD_CACHE_BUCKET}/${BUILD_CACHE_PATH}/build-cache-$CODE_WEB_VERSION.tar.gz" .
+        tar -xzf "build-cache-$CODE_WEB_VERSION.tar.gz"
+    fi
+}
+
 function cleancache {
     echo " - - Clearing Cache"
     php bin/magento cache:flush
@@ -506,7 +531,7 @@ array(
        array(
          'server' => '${REDIS_MAGENTO_FPC_HOST}',
          'port' => '${REDIS_MAGENTO_FPC_PORT}',
-         'database' => '0',
+         'database' => '1',
          'compress_data' => '0'
        )
     )
@@ -532,11 +557,11 @@ array (
     'password' => '',
     'timeout' => '2.5',
     'persistent_identifier' => '',
-    'database' => '0',
+    'database' => '2',
     'compression_threshold' => '2048',
     'compression_library' => 'gzip',
     'log_level' => '1',
-    'max_concurrency' => '6',
+    'max_concurrency' => '24',
     'break_after_frontend' => '5',
     'break_after_adminhtml' => '30',
     'first_lifetime' => '600',

@@ -11,3 +11,4 @@ CHANGELOG.md
 Dockerfile
 dev/tests
 releases
+pub/static/process

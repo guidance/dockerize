@@ -41,17 +41,14 @@ ENV MAGENTO_SESSION_SAVE=db
 RUN echo "pm.max_children = 300" >> /etc/php/7.1/fpm/pool.d/www.conf
 
 RUN echo "alias m2config=\"magento-config.sh /app configure\"" >> /root/.bashrc && \
-	echo "alias m2fc=\"su - application -c 'cd /app && php bin/magento cache:flush'\"" >> /root/.bashrc && \
-	echo "alias m2su=\"su - application -c 'cd /app && php bin/magento setup:upgrade'\"" >> /root/.bashrc
-
-RUN mkdir -p /app
-
-ADD . /app
-
-WORKDIR /app
-
-RUN mkdir -p /app/var/log 
+	echo "alias m2fc=\"su - www-data -c 'cd /app && php bin/magento cache:flush'\"" >> /root/.bashrc && \
+	echo "alias m2su=\"su - www-data -c 'cd /app && php bin/magento setup:upgrade'\"" >> /root/.bashrc && \
+	echo "alias m2nuke=\"rm -rf pub/static/process && magento-config.sh /app configure\"" >> /root/.bashrc
 
 RUN mkdir -p /home/www-data && chown www-data:www-data /home/www-data && usermod -s /bin/bash -d /home/www-data www-data
 
-RUN chown -R www-data:www-data /app
+RUN mkdir -p /app/var/log && chown -R www-data:www-data /app
+
+COPY --chown=www-data:www-data . /app
+
+WORKDIR /app

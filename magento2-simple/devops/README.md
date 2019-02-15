@@ -56,7 +56,14 @@ _This will attach the terminal to the containers and output useful information f
 ### Magento Configuration
 This system creates a one time run processor that sets up Magento Configs, and installs Magento if not already installed, and sets all the proper permissions. See `magento/devops/magento-config.sh` for commands and sequence of events.
 > This script gets copied as a system executable that is run by supervisor once when the container starts, and can be run if you want to reset things by hand. 
-From a bash prompt in the web service container: execute `magento-config.sh /app configure`
+From a bash prompt in the web service container execute: `magento-config.sh /app configure`
+
+To help developers there are some shortcuts created, that you can execute while at a bash prompt in the
+magento container:
+* `m2config` this runs the full `magento-config.sh /app configure` command. 
+* `m2fc` this runs the Magento `cache:flush` as the web server user.
+* `m2su` this runs the Magento `setup:upgrade` as the web server user.
+* `m2nuke` this cleans the static build folders, and then runs the configure command.
 
 #### Roles and Modes
 
@@ -113,12 +120,30 @@ For the best Performance with M2, we need to share limited folders. By default w
 * `[magento]/var/log` < Magento Log Folder.
 * `[magento]/pub/media` < Magento Media Folder.
 
-### Postfix Configuration
+### Composer and Vendor Code
+Magento 2 uses composer to bring in 3rd party functionality and themes
 
-The following environment variables are used by the config script to setup the postfix configuration files.
+We don't share the `vendor` directory between the container and the host for performance reasons. 
+So, if you need to run `composer install` or `composer update` you need to run them while in the container,
+and as the `www-data` user. **IMPORTANT** If you run these commands as root, the permissions will not be right
+and you will need to wipe the permissions, or rebuild the container. 
 
-Use the MailHog for Local Development, and the AWS SES for QA/Stage/Production
-If you use AWS SES, then the from address needs to be verified as a sending address in the SES console. 
+To faciliate a faster process of copying these vendor files to the host (your local development machine)
+there is a concept of a build cache. 
+
+You will see the following volume share in the Docker Compose sample file in the `devops` directory:
+`- "./build-cache:/app/build-cache"`
+
+And there is a command in the `magento-config.sh` script `archivebuildcache`, you would execute this while in the 
+container bash like: `$ magento-config.sh /app archivebuildcache` 
+ 
+This command creates a tar ball archive with the vendor directory, composer.json, and composer.lock file and copies to the `build-cache` folder. 
+
+Once this is completed, you can then unarchive this to your local file system:
+`cd [magento root] && rm -rf vendor && tar -xzf ../build-cache/build-cache-vendor.tar.gz`
+
+Once the updated vendor files are on your local file system, you can rebuild the container, and the vendor files
+will be persisted in to the image. 
 
     # Used to config the use of MailHog
     - POSTFIX_RELAYURL=email
@@ -141,7 +166,6 @@ Add the following ENV item to the docker-compose web container definition to hav
 environment
 
     - CRONRUNNER=1
-
 
 ### Docker Commands for development
 Docker Compose
