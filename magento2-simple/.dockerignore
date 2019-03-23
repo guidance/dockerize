@@ -1,14 +1,2 @@
-#Commented lineitems to be reviewed
-
-.git/
-app/etc/env.php
-LICENSE.txt
-LICENSE_AFL.txt
-LICENSE_EE.txt
-RELEASE_NOTES.txt
-README_EE.md
-CHANGELOG.md
 Dockerfile
-dev/tests
-releases
 pub/static/process

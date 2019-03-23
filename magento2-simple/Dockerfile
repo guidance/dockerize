@@ -22,6 +22,12 @@ RUN rm -f -- /opt/docker/etc/httpd/conf.d/10-php.conf && \
 
 RUN rm -rf /var/lib/apt/lists/*
 
+# Install AWS CLI
+RUN curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip" && \
+    unzip awscli-bundle.zip && \
+    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws && \
+    aws --version && rm awscli-bundle.zip
+
 RUN wget https://files.magerun.net/n98-magerun2.phar && \
     cp ./n98-magerun2.phar /usr/local/bin/ && \
     chmod +x /usr/local/bin/n98-magerun2.phar
