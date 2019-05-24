@@ -44,6 +44,7 @@ function magento2-simple {
           cp $MAGENTO_DIR/Dockerfile magento2-simple/Dockerfile 
           cp $MAGENTO_DIR/.dockerignore magento2-simple/.dockerignore
           cp $MAGENTO_DIR/Makefile magento2-simple/Makefile
+          cp $MAGENTO_DIR/version magento2-simple/version
 
           echo " - - - "
 
