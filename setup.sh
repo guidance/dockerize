@@ -54,6 +54,7 @@ function magento2-simple {
           sleep 1
           cp magento2-simple/Dockerfile $MAGENTO_DIR/
           cp magento2-simple/.dockerignore $MAGENTO_DIR/
+          cp magento2-simple/Makefile $MAGENTO_DIR/
 
 
           if [ -e "$PROJECT_DIR/docker-compose.yml" ]

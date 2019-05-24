@@ -36,6 +36,9 @@ services:
             #- MAGE_CONTAINER_ROLE=web
             - CRON_RUNNER=true
             # - CRON_RUNNER=false
+            ###Domain Store Maps###
+            - MAGE_VHOST_WEBSITE_A=project-a.domain.com|website_a_code|website
+            - MAGE_VHOST_WEBSITE_B=project-b.domain.com|website_b_code|website
             ####Composer Parameters
             - MAGENTO_REPO_PUBLIC=293a************************553c
             - MAGENTO_REPO_PRIVATE=9be5************************2acc

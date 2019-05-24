@@ -29,7 +29,9 @@ function configure {
     export MAGE_PROCESS_RUNNER=0
 
     adjustwebserver
+    webserveroff
     cronoff
+    mapdomains
     disabledebug
     checkrequiredresources
     setinstallstatus
@@ -41,6 +43,8 @@ function configure {
     postfix
     installnewrelicapm
     service php-fpm restart
+    mapdomains_vhost
+    webserveron
     echo " - - Config Ended"
 }
 
@@ -54,18 +58,27 @@ function installandupgrade {
         then
             installmagento
             envconfig > $LOCAL_ENV_PATH
+            parseconfigenvvars
             backupdb
             upgrade
-            parseconfigenvvars
             cleancache
+            version
+            uploadbuildcache
         else
-            cp $PROCESS_ENV_PATH $LOCAL_ENV_PATH
-            cp $PROCESS_CONFIG_PATH $LOCAL_CONFIG_PATH
+            envconfig > $LOCAL_ENV_PATH
+            rm -rf $APP_DIR/var/cache/ $APP_DIR/generated/
+            version
     fi
 
-    version
-    uploadbuildcache
     maintoff
+}
+
+function webserveroff {
+    service apache stop
+}
+
+function webserveron {
+    service apache start
 }
 
 function archivebuildcache {
@@ -382,6 +395,8 @@ function upgrade {
 
     php bin/magento setup:upgrade
 
+    envconfig > $LOCAL_ENV_PATH
+
     if [ "${MAGE_MODE}" == "production" ]
         then
         php bin/magento setup:static-content:deploy en_US
@@ -390,9 +405,8 @@ function upgrade {
         mkdir -p pub/static/process
         cp pub/static/deployed_version.txt pub/static/process/deployed_version.txt
 
-        # Copy out the env and config files for distribution
+        # Copy out the config files for distribution
         cp $LOCAL_CONFIG_PATH $PROCESS_CONFIG_PATH
-        cp $LOCAL_ENV_PATH $PROCESS_ENV_PATH
 
     fi
 }
@@ -408,15 +422,19 @@ function uploadbuildcache {
 
 function downloadbuildcache {
     CODE_WEB_VERSION=$(cat version)
-    if [ -n "${BUILD_CACHE_BUCKET}" ]
+    if [ -n "${BUILD_CACHE_BUCKET}" ] 
         then
-        aws s3 cp "s3://${BUILD_CACHE_BUCKET}/${BUILD_CACHE_PATH}/build-cache-$CODE_WEB_VERSION.tar.gz" .
+            if [ ! -e "build-cache-$CODE_WEB_VERSION.tar.gz" ] 
+                then
+                aws s3 cp "s3://${BUILD_CACHE_BUCKET}/${BUILD_CACHE_PATH}/build-cache-$CODE_WEB_VERSION.tar.gz" .
+            fi
         tar -xzf "build-cache-$CODE_WEB_VERSION.tar.gz"
     fi
 }
 
 function cleancache {
     echo " - - Clearing Cache"
+    php bin/magento cache:clean
     php bin/magento cache:flush
 }
 
@@ -432,8 +450,7 @@ function setinstallstatus {
 
     set -e
 
-}
-
+} 
 function installmagento {
     ###############################################
     ## Install MAGENTO from environment variables
@@ -514,33 +531,27 @@ function redisconfig {
     if [ -n "${REDIS_MAGENTO_CACHE_HOST}" ] && [ -n "${REDIS_MAGENTO_FPC_HOST}" ]
     then
         cat <<REDISCONFIGFILE
-'cache' =>
-array(
-   'frontend' =>
-   array(
-      'default' =>
-      array(
-         'backend' => 'Cm_Cache_Backend_Redis',
-         'backend_options' =>
-         array(
-            'server' => '${REDIS_MAGENTO_CACHE_HOST}',
-            'database' => '${REDIS_MAGENTO_CACHE_DB}',
-            'port' => '${REDIS_MAGENTO_CACHE_PORT}'
-            ),
-    ),
-    'page_cache' =>
-    array(
-      'backend' => 'Cm_Cache_Backend_Redis',
-      'backend_options' =>
-       array(
-         'server' => '${REDIS_MAGENTO_FPC_HOST}',
-         'port' => '${REDIS_MAGENTO_FPC_PORT}',
-         'database' => '${REDIS_MAGENTO_FPC_DB}',
-         'compress_data' => '0'
-       )
-    )
-  )
-),
+    'cache' => [
+        'frontend' => [
+            'default' => [
+                'backend' => 'Cm_Cache_Backend_Redis',
+                'backend_options' => [
+                    'server' => '${REDIS_MAGENTO_CACHE_HOST}',
+                    'database' => '${REDIS_MAGENTO_CACHE_DB}',
+                    'port' => '${REDIS_MAGENTO_CACHE_PORT}'
+                ]
+            ],
+            'page_cache' => [
+                'backend' => 'Cm_Cache_Backend_Redis',
+                'backend_options' => [
+                    'server' => '${REDIS_MAGENTO_FPC_HOST}',
+                    'port' => '${REDIS_MAGENTO_FPC_PORT}',
+                    'database' => '${REDIS_MAGENTO_FPC_DB}',
+                    'compress_data' => '0'
+                ]
+            ]
+        ]
+    ],
 REDISCONFIGFILE
     else
         echo ''
@@ -551,38 +562,35 @@ function sessionconfig {
     if [ -n "${REDIS_MAGENTO_SESSIONS_HOST}" ]
     then
         cat <<REDISCONFIGFILE
-'session' =>
-array (
-  'save' => 'redis',
-  'redis' =>
-  array (
-    'host' => '${REDIS_MAGENTO_SESSIONS_HOST}',
-    'port' => '${REDIS_MAGENTO_SESSIONS_PORT}',
-    'password' => '',
-    'timeout' => '2.5',
-    'persistent_identifier' => '',
-    'database' => '${REDIS_MAGENTO_SESSIONS_DB}',
-    'compression_threshold' => '2048',
-    'compression_library' => 'gzip',
-    'log_level' => '1',
-    'max_concurrency' => '24',
-    'break_after_frontend' => '5',
-    'break_after_adminhtml' => '30',
-    'first_lifetime' => '600',
-    'bot_first_lifetime' => '60',
-    'bot_lifetime' => '7200',
-    'disable_locking' => '0',
-    'min_lifetime' => '60',
-    'max_lifetime' => '2592000'
-  )
-),
+    'session' => [
+        'save' => 'redis',
+        'redis' => [
+            'host' => '${REDIS_MAGENTO_SESSIONS_HOST}',
+            'port' => '${REDIS_MAGENTO_SESSIONS_PORT}',
+            'password' => '',
+            'timeout' => '2.5',
+            'persistent_identifier' => '',
+            'database' => '${REDIS_MAGENTO_SESSIONS_DB}',
+            'compression_threshold' => '2048',
+            'compression_library' => 'gzip',
+            'log_level' => '1',
+            'max_concurrency' => '24',
+            'break_after_frontend' => '5',
+            'break_after_adminhtml' => '30',
+            'first_lifetime' => '600',
+            'bot_first_lifetime' => '60',
+            'bot_lifetime' => '7200',
+            'disable_locking' => '0',
+            'min_lifetime' => '60',
+            'max_lifetime' => '2592000'
+        ]
+    ],
 REDISCONFIGFILE
     else
         cat <<REDISCONFIGFILE
-  'session' =>
-  array (
-    'save' => '${MAGENTO_SESSION_SAVE}',
-  ),
+    'session' => [
+        'save' => '${MAGENTO_SESSION_SAVE}',
+    ],
 REDISCONFIGFILE
     fi
 }
@@ -592,94 +600,144 @@ function envconfig {
 
     REDIS_CONFIG=$(redisconfig)
     SESSION_CONFIG=$(sessionconfig)
+    MCOM_CONFIG=$(mcomconfig)
 
     cat <<CONFIGFILE
 <?php
-return array (
-  'backend' => 
-  array (
-    'frontName' => '${MAGENTO_BACKEND_PATH}',
-  ),
-  'queue' => 
-  array (
-    'amqp' => 
-    array (
-      'host' => '',
-      'port' => '',
-      'user' => '',
-      'password' => '',
-      'virtualhost' => '/',
-      'ssl' => '',
-    ),
-  ),
-  'db' => 
-  array (
-    'connection' => 
-    array (
-      'indexer' => 
-      array (
-        'host' => '${MAGENTO_DB_HOST}',
-        'dbname' => '${MAGENTO_DB_NAME}',
-        'username' => '${MAGENTO_DB_USER}',
-        'password' => '${MAGENTO_DB_PASSWORD}',
-        'model' => 'mysql4',
-        'engine' => 'innodb',
-        'initStatements' => 'SET NAMES utf8;',
-        'active' => '1',
-        'persistent' => NULL,
-      ),
-      'default' => 
-      array (
-        'host' => '${MAGENTO_DB_HOST}',
-        'dbname' => '${MAGENTO_DB_NAME}',
-        'username' => '${MAGENTO_DB_USER}',
-        'password' => '${MAGENTO_DB_PASSWORD}',
-        'model' => 'mysql4',
-        'engine' => 'innodb',
-        'initStatements' => 'SET NAMES utf8;',
-        'active' => '1',
-      ),
-    ),
-    'table_prefix' => '',
-  ),
-  'crypt' => 
-  array (
-    'key' => '${MAGENTO_CRYPT_KEY}',
-  ),
-  'resource' =>
-  array (
-    'default_setup' => 
-    array (
-      'connection' => 'default',
-    ),
-  ),
-  'x-frame-options' => 'SAMEORIGIN',
-  'MAGE_MODE' => '${MAGE_MODE}',
-  'cache_types' => 
-  array (
-    'config' => 1,
-    'layout' => 1,
-    'block_html' => 1,
-    'collections' => 1,
-    'reflection' => 1,
-    'db_ddl' => 1,
-    'eav' => 1,
-    'customer_notification' => 1,
-    'target_rule' => 1,
-    'full_page' => 1,
-    'config_integration' => 1,
-    'config_integration_api' => 1,
-    'translate' => 1,
-    'config_webservice' => 1,
-  ),
-  'install' => 
-  array (
-    'date' => 'Sat, 01 Jul 2017 00:01:31 +0000',
-  ),
-  $REDIS_CONFIG
-  $SESSION_CONFIG
-);
+return [
+    'backend' => [
+        'frontName' => '${MAGENTO_BACKEND_PATH}',
+    ],
+    'queue' => [
+        'amqp' => [
+            'host' => '',
+            'port' => '',
+            'user' => '',
+            'password' => '',
+            'virtualhost' => '/',
+            'ssl' => ''
+        ]
+    ],
+    'db' => [
+        'connection' => [
+            'indexer' => [
+                'host' => '${MAGENTO_DB_HOST}',
+                'dbname' => '${MAGENTO_DB_NAME}',
+                'username' => '${MAGENTO_DB_USER}',
+                'password' => '${MAGENTO_DB_PASSWORD}',
+                'model' => 'mysql4',
+                'engine' => 'innodb',
+                'initStatements' => 'SET NAMES utf8;',
+                'active' => '1',
+                'persistent' => NULL
+            ],
+            'default' => [
+                'host' => '${MAGENTO_DB_HOST}',
+                'dbname' => '${MAGENTO_DB_NAME}',
+                'username' => '${MAGENTO_DB_USER}',
+                'password' => '${MAGENTO_DB_PASSWORD}',
+                'model' => 'mysql4',
+                'engine' => 'innodb',
+                'initStatements' => 'SET NAMES utf8;',
+                'active' => '1'
+            ]
+        ],
+        'table_prefix' => ''
+    ],
+    'crypt' => [
+        'key' => '${MAGENTO_CRYPT_KEY}',
+    ],
+    'resource' => [
+        'default_setup' => [
+            'connection' => 'default'
+        ]
+    ],
+    'x-frame-options' => 'SAMEORIGIN',
+    'MAGE_MODE' => '${MAGE_MODE}',
+    'cache_types' => [
+        'config' => 1,
+        'layout' => 1,
+        'block_html' => 1,
+        'collections' => 1,
+        'reflection' => 1,
+        'db_ddl' => 1,
+        'eav' => 1,
+        'customer_notification' => 1,
+        'target_rule' => 1,
+        'full_page' => 1,
+        'config_integration' => 1,
+        'config_integration_api' => 1,
+        'translate' => 1,
+        'config_webservice' => 1
+    ],
+    'install' => [
+        'date' => 'Sat, 01 Jul 2017 00:01:31 +0000'
+    ],
+    $REDIS_CONFIG
+    $SESSION_CONFIG
+    $MCOM_CONFIG
+];
 CONFIGFILE
+}
+
+function mapdomains {
+
+    # For this to work, the enviornment must contain a variable that starts with MAGE_VHOST.
+    # The value of MAGE_VHOST should be set wth followng format:
+    # DOMAIN|MAGE_RUN_CODE|MAGE_RUN_TYPE
+    #   DOMAIN = The value for apache Host
+    #   MAGE_RUN_CODE - Built in Magento variable and is uniqe to each store/website
+    #   MAGE_RUN_TYPE = Built in Magento variable, value can be either "store" or "website"
+    # example:
+    #   MAGE_VHOST_SITEA="store-a.domain.com|base|store"
+
+
+    # Parse the enviornment and look for anything that matches $MAGE_VHOST.
+    DETECTED_VHOSTS=$(env | grep "MAGE_VHOST")
+    for VHOST in ${DETECTED_VHOSTS}
+    do
+        DOMAIN=$(echo ${VHOST} | cut -d '=' -f2 | cut -d '|' -f1)
+        MAGE_RUN_CODE=$(echo ${VHOST} | cut -d '|' -f2)
+        MAGE_RUN_TYPE=$(echo ${VHOST} | cut -d '|' -f3)
+        
+        VHOST_FILE_NAME="/opt/docker/etc/httpd/vhost.common.d/01-boilerplate.conf"
+
+        echo " - - Values of ${VHOST}"
+        echo " - - - - DOMAIN: ${DOMAIN}"
+        echo " - - - - MAGE_RUN_CODE: ${MAGE_RUN_CODE}"
+        echo " - - - - MAGE_RUN_TYPE: ${MAGE_RUN_TYPE}"
+
+        echo "SetEnvIf Host $DOMAIN MAGE_RUN_TYPE=${MAGE_RUN_TYPE}" >> $VHOST_FILE_NAME
+        echo "SetEnvIf Host $DOMAIN MAGE_RUN_CODE=${MAGE_RUN_CODE}" >> $VHOST_FILE_NAME
+
+    done
+
+}
+
+function mapdomains_vhost {
+  ## Dynamically set the vhosts based on values in the magento database;
+  if [ "${MAGENTO_INSTALL_STATUS}" == "complete" ]; then
+
+    VHOST_FILE_NAME="/opt/docker/etc/httpd/vhost.common.d/01-boilerplate.conf"
+    MAGE_RUN_TYPE="website"
+    mysql -h "${MAGENTO_DB_HOST}" -u "${MAGENTO_DB_USER}" -p"${MAGENTO_DB_PASSWORD}" "${MAGENTO_DB_NAME}" -e "SELECT website_id,code FROM store_website" -s --skip-column-names | while read website_id MAGE_RUN_CODE; do
+      if [[ "${MAGE_RUN_CODE}" != "admin" && "${MAGE_RUN_CODE}" != "base" ]]; then
+        HTTP_DOMAIN=$(mysql -h "${MAGENTO_DB_HOST}" -u "${MAGENTO_DB_USER}" -p"${MAGENTO_DB_PASSWORD}" "${MAGENTO_DB_NAME}" -e "SELECT value FROM core_config_data WHERE path = 'web/secure/base_url' AND scope_id=${website_id} AND scope='websites'" -s --skip-column-names);
+        if [ -z "$HTTP_DOMAIN" ]
+          then
+            echo " -- No Domain";
+          else
+            TRAILING_SLASH_DOMAIN="$( echo "$HTTP_DOMAIN" | sed 's/https\?:\/\///')"
+            DOMAIN="$( echo "$TRAILING_SLASH_DOMAIN" | sed 's/\///')"
+            echo " - - - - DOMAIN: ${DOMAIN}"
+            echo " - - - - MAGE_RUN_CODE: ${MAGE_RUN_CODE}"
+            echo " - - - - MAGE_RUN_TYPE: ${MAGE_RUN_TYPE}"
+            echo "SetEnvIf Host $DOMAIN MAGE_RUN_TYPE=${MAGE_RUN_TYPE}" >> $VHOST_FILE_NAME
+            echo "SetEnvIf Host $DOMAIN MAGE_RUN_CODE=${MAGE_RUN_CODE}" >> $VHOST_FILE_NAME
+          fi
+      fi
+    done
+  fi
 }
 
 function installnewrelicapm {

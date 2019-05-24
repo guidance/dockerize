@@ -1,1 +1,1 @@
-*/5 * * * * www-data /usr/bin/php /app/bin/magento cron:run >> /app/var/log/cron.log
+* * * * * www-data /usr/bin/php /app/bin/magento cron:run >> /app/var/log/cron.log

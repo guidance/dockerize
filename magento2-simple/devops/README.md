@@ -15,6 +15,7 @@ Local Development Environment Powered by Docker and Docker Compose
         |-- magento << This is where you clone this repo  
         |-- magento-db << Folder used for storing and persisting the DB data files.
         |-- magento-es << Folder used for storing and persisting elasticsearch data files.
+        |-- build-cache << This is for quickly moving build archives to your local
         |-- docker-compose.yml << File used to build the magento service.  
 ```
 

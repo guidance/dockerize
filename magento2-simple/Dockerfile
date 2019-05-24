@@ -16,6 +16,8 @@ RUN	DEBIAN_FRONTEND=noninteractive apt-get install -y vim
 
 RUN mkdir -p /run/php && rm /usr/local/bin/php-fpm && ln -nfs /usr/sbin/php-fpm7.1 /usr/local/bin/php-fpm
 
+RUN phpdismod memcached
+
 RUN rm -f -- /opt/docker/etc/httpd/conf.d/10-php.conf && \
 	echo "variables_order=EGPCS" >> /etc/php/7.1/apache2/conf.d/99-docker.ini && \
 	echo "variables_order=EGPCS" >> /etc/php/7.1/cli/conf.d/99-docker.ini

@@ -43,6 +43,7 @@ function magento2-simple {
           sleep 1
           cp $MAGENTO_DIR/Dockerfile magento2-simple/Dockerfile 
           cp $MAGENTO_DIR/.dockerignore magento2-simple/.dockerignore
+          cp $MAGENTO_DIR/Makefile magento2-simple/Makefile
 
           echo " - - - "
 

@@ -4,6 +4,50 @@ class ConfigParser
 
 	public $setupConfigurations = [];
 	public $forceConfigurations = [];
+	public $websiteMap = [];
+	public $storeMap = [];
+
+	function createScopeMaps() {
+		$mysqli = new mysqli(
+			$_ENV['MAGENTO_DB_HOST'], 
+			$_ENV['MAGENTO_DB_USER'], 
+			$_ENV['MAGENTO_DB_PASSWORD'], 
+			$_ENV['MAGENTO_DB_NAME']
+		);
+
+		/* check connection */
+		if (mysqli_connect_errno()) {
+		    printf("Connect failed: %s\n", mysqli_connect_error());
+		    exit();
+		}
+
+		$query = "SELECT code, website_id FROM store_website;";
+		$result = $mysqli->query($query);
+
+		/* associative array */
+		$websites = $result->fetch_all(MYSQLI_ASSOC);
+		foreach ($websites as $website) {
+			$this->websiteMap[$website['code']] = $website['website_id'];
+		}
+
+		/* free result set */
+		$result->free();
+
+		$query = "SELECT code, store_id FROM store;";
+		$result = $mysqli->query($query);
+
+		/* associative array */
+		$stores = $result->fetch_all(MYSQLI_ASSOC);
+		foreach ($stores as $store) {
+			$this->storeMap[$store['code']] = $store['store_id'];
+		}
+
+		/* free result set */
+		$result->free();
+
+		/* close connection */
+		$mysqli->close();
+	}
 
 	function parseVariables() {
 		foreach ($_ENV as $envVar => $value) {
@@ -13,7 +57,12 @@ class ConfigParser
 			$scope = array_shift($path);
 			$scopeId = '0';
 			if ($scope !== 'default') {
-				$scopeId = array_shift($path);
+				$pathPart = array_shift($path);
+				if ($scope == 'websites' && isset($this->websiteMap[$pathPart])) {
+					$scopeId = $this->websiteMap[$pathPart];
+				} elseif ($scope == 'stores' && isset($this->storeMap[$pathPart])) {
+					$scopeId = $this->storeMap[$pathPart];
+				}
 			}
 			if ($namespace === 'setup' && $type === 'config') {
 				$this->setupConfigurations[] = array(
@@ -91,6 +140,7 @@ class ConfigParser
 	}
 
 	function run() {
+		$this->createScopeMaps();
 		$this->parseVariables();
 		$this->storeConfigurations();
 	}
